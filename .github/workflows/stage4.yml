@@ -1,0 +1,41 @@
+name: RouteForge Stage 4 contract
+on:
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  contract:
+    name: routeforge-stage4-contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout exact PR head
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Test and attest checkout
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const cp = require('node:child_process');
+          const crypto = require('node:crypto');
+          const event = JSON.parse(fs.readFileSync(process.env.GITHUB_EVENT_PATH, 'utf8'));
+          const git = () => cp.execFileSync('/usr/bin/git', ['rev-parse', 'HEAD'], {encoding:'utf8'}).trim();
+          const before = git();
+          const result = cp.spawnSync(process.execPath, ['--test', 'test.mjs'], {
+            stdio:'inherit', timeout:120000, env:{PATH:'/usr/bin:/bin',HOME:'/tmp',LANG:'C.UTF-8'}
+          });
+          const after = git();
+          const digest = crypto.createHash('sha256').update(fs.readFileSync('.github/workflows/stage4.yml')).digest('hex');
+          console.log('ROUTEFORGE_CI_RECEIPT_V1 ' + JSON.stringify({
+            repositoryId:Number(process.env.GITHUB_REPOSITORY_ID),workflowId:0,
+            runId:Number(process.env.GITHUB_RUN_ID),runAttempt:Number(process.env.GITHUB_RUN_ATTEMPT),
+            jobName:'routeforge-stage4-contract',headSha:event.pull_request.head.sha,baseSha:event.pull_request.base.sha,
+            testedSha:before,checkoutBefore:before,checkoutAfter:after,workflowSha256:digest,
+            testExitCode:result.status ?? 124
+          }));
+          process.exit(before===after ? (result.status ?? 124) : 125);
+          NODE
