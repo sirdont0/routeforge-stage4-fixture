@@ -31,7 +31,7 @@ jobs:
           const after = git();
           const digest = crypto.createHash('sha256').update(fs.readFileSync('.github/workflows/stage4.yml')).digest('hex');
           console.log('ROUTEFORGE_CI_RECEIPT_V1 ' + JSON.stringify({
-            repositoryId:Number(process.env.GITHUB_REPOSITORY_ID),workflowId:0,
+            repositoryId:Number(process.env.GITHUB_REPOSITORY_ID),workflowId:403394272,
             runId:Number(process.env.GITHUB_RUN_ID),runAttempt:Number(process.env.GITHUB_RUN_ATTEMPT),
             jobName:'routeforge-stage4-contract',headSha:event.pull_request.head.sha,baseSha:event.pull_request.base.sha,
             testedSha:before,checkoutBefore:before,checkoutAfter:after,workflowSha256:digest,
